@@ -11,7 +11,7 @@ end
 function run_heigenpair_workflow(A, k)
     
     # --- File Output Configuration ---
-    equations_output_filename = "h-eigenpair_eqs_$k.txt"
+    # equations_output_filename = "h-eigenpair_eqs_$k.txt"
     solutions_output_filename = "solutions_$k.txt"
 
     # --- Main Execution Logic ---
@@ -19,10 +19,10 @@ function run_heigenpair_workflow(A, k)
         order_m = ndims(A)
         dim_n = size(A, 1)
         # --- Generate Symbolic Equations ---
-        println("Generating symbolic equations...")
+        # println("Generating symbolic equations...")
         F, eqs, x_vars, lambda_var = generate_heigenpair_system(A)
         all_vars = [x_vars..., lambda_var]
-        println("Symbolic system generated.")
+        # println("Symbolic system generated.")
 
         # # --- Write Equations to File ---
         # println("\nWriting equations to '$equations_output_filename'...")
@@ -40,9 +40,8 @@ function run_heigenpair_workflow(A, k)
         # println("File written successfully.")
 
         # --- Solve the System and Write Solutions ---
-        println("\nSolving and writing solutions...")
-        solve_and_write_solutions(F, solutions_output_filename)
-        println("Solutions written!")
+        # println("\nSolving and writing solutions...")
+        return solve_and_write_solutions(F, solutions_output_filename)
 
     catch e
         println("\nAn error occurred during execution:")
