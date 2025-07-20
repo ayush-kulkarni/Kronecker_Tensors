@@ -1,0 +1,17 @@
+System of Equations for H-Eigenpairs
+========================================
+
+Input Tensor Details:
+  - Order (m): 4
+  - Dimension (n): 2
+
+Variables:
+  - Eigenvalue: λ
+  - Eigenvector components: x₁, x₂
+
+Equations:
+  Eq. 1:  -0.3*x₂*x₁^2 - 0.3*x₂^2*x₁ - λ*x₁^3 + 0.5*x₁^3 + 1.0*x₂^3
+  Eq. 2:  -0.3*x₂*x₁^2 + 3.0*x₂^2*x₁ - λ*x₂^3 - 0.1*x₁^3 + 0.5*x₂^3
+  Eq. 3:  -1 + x₁^2 + x₂^2
+
+========================================

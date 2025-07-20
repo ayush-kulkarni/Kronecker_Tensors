@@ -1,3 +1,5 @@
+using Combinatorics
+
 try
     include("runner.jl")
 
@@ -23,78 +25,110 @@ function kronecker_product(A::AbstractArray, B::AbstractArray)
     return A_repeated .* B_repeated
 end
 
-function check()
-    # Run the workflow for Tensor A 
-    # println("Running workflow for Tensor A:")
+
+
+function run_check_on_tensors(tensor_B, tensor_A)
+    kronecker_product_result = kronecker_product(tensor_B, tensor_A)
     largest_magnitude_lambda_A = run_heigenpair_workflow(tensor_A, "A")
-
-    # Run the workflow for Tensor B
-    # println("\nRunning workflow for Tensor B:")
     largest_magnitude_lambda_B = run_heigenpair_workflow(tensor_B, "B")
-
-    # Run the workflow for Tensor C (Tensor B ⊗ Tensor A)
-    # println("\nRunning workflow for Tensor C (Tensor B ⊗ Tensor A):")
     largest_magnitude_lambda_C = run_heigenpair_workflow(kronecker_product_result, "C")
 
     product_of_lambdas = largest_magnitude_lambda_A * largest_magnitude_lambda_B
 
-    println("\n--- Verification ---")
-    println("Largest |λ_A|: $largest_magnitude_lambda_A")
-    println("Largest |λ_B|: $largest_magnitude_lambda_B")
-    println("Largest |λ_C|: $largest_magnitude_lambda_C")
-    println("|λ_A| * |λ_B|: $product_of_lambdas")
-
-    if isapprox(product_of_lambdas, largest_magnitude_lambda_C, atol=1e-8)
-        println("\nCheck PASSED: |λ_A| * |λ_B| is approximately equal to |λ_C| (precision 1e-8).")
-    else
-        println("\nCheck FAILED: |λ_A| * |λ_B| is NOT equal to |λ_C|.")
+    if !isapprox(product_of_lambdas, largest_magnitude_lambda_C, atol=1e-8)
+        println("Check FAILED. Terminating program. ")
+        println("|λ_A| * |λ_B|: $product_of_lambdas")
+        println("Largest |λ_C|: $largest_magnitude_lambda_C")
         println("Difference: $(abs(product_of_lambdas - largest_magnitude_lambda_C))")
+        println("The following tensors caused the failure:")
+        println("\nTensor A:")
+        display(tensor_A)
+        println("\nTensor B:")
+        display(tensor_B)
+        println("\nKronecker Product (B ⊗ A):")
+        display(kronecker_product_result)
+        return # Terminate after the first failure
     end
 end
 
-# Tensor A Values
-a_values = [
-    # Slice (:,:,1,1)
-    -0.5,  0.6,
-     0.6,  0.2,
-    # Slice (:,:,2,1)
-     0.6,  0.2,
-     0.2,  0.1,
-    # Slice (:,:,1,2)
-     0.6,  0.2,
-     0.2,  0.1,
-    # Slice (:,:,2,2)
-     0.2,  0.1,
-     0.1, -1.7
-]
 
-# Reshape the flat list into a 2x2x2x2 tensor.
-tensor_A = reshape(a_values, 2, 2, 2, 2)
+function run_check_on_random_tensors(num_tests)
+    for i in 1:num_tests
+        println("Test $i")
+        # Generate random symmetric tensors A and B
+        tensor_A = generate_symmetric_tensor(4, (2, 2, 2, 2))
+        tensor_B = generate_symmetric_tensor(4, (2, 2, 2, 2))
 
-# Tensor B Values
-b_values = [
-    # Slice (:,:,1,1)
-    -0.3,  1.0,
-     1.0,  0.1,
-    # Slice (:,:,2,1)
-     1.0,  0.1,
-     0.1, -1.0,
-    # Slice (:,:,1,2)
-     1.0,  0.1,
-     0.1, -1.0,
-    # Slice (:,:,2,2)
-     0.1, -1.0,
-    -1.0, -0.9
-]
+        # Compute their Kronecker product
+        kronecker_product_result = kronecker_product(tensor_B, tensor_A)
 
-# Reshape the flat list into a 2x2x2x2 tensor.
-tensor_B = reshape(b_values, 2, 2, 2, 2)
+        # Run the workflow and compare results
+        largest_magnitude_lambda_A = run_heigenpair_workflow(tensor_A, "A")
+        largest_magnitude_lambda_B = run_heigenpair_workflow(tensor_B, "B")
+        largest_magnitude_lambda_C = run_heigenpair_workflow(kronecker_product_result, "C")
 
-# println("\nKronecker Product (Tensor B ⊗ Tensor A):")
-kronecker_product_result = kronecker_product(tensor_B, tensor_A)
-# println("The resulting tensor is of size: ", size(kronecker_product_result)) 
+        product_of_lambdas = largest_magnitude_lambda_A * largest_magnitude_lambda_B
 
-# display(kronecker_product_result)
-# display(reshape(kronecker_product_result, (16, 16)))
+        if !isapprox(product_of_lambdas, largest_magnitude_lambda_C, atol=1e-8)
+            println("Check FAILED. Terminating program. ")
+            println("|λ_A| * |λ_B|: $product_of_lambdas")
+            println("Largest |λ_C|: $largest_magnitude_lambda_C")
+            println("Difference: $(abs(product_of_lambdas - largest_magnitude_lambda_C))")
+            println("The following tensors caused the failure:")
+            println("\nTensor A:")
+            display(tensor_A)
+            println("\nTensor B:")
+            display(tensor_B)
+            println("\nKronecker Product (B ⊗ A):")
+            display(kronecker_product_result)
+            return # Terminate after the first failure
+        end
+    end
+    # If the loop completes, all checks passed and the program exits silently.
+end
 
-check()
+function generate_symmetric_tensor(dim, size)
+    value_set = -1.0:0.1:1.0
+    tensor = zeros(size)
+    n = size[1]
+    # This implementation assumes all dimensions have the same size
+    if !all(s -> s == n, size)
+        error("generate_symmetric_tensor requires all dimensions to have the same size.")
+    end
+
+    # Iterate through canonical indices (where i_1 <= i_2 <= ... <= i_d)
+    for idx_tuple in Combinatorics.with_replacement_combinations(1:n, dim)
+        # Pick a random value from the specified set
+        val = rand(value_set)
+        # Assign this value to all symmetric positions (all permutations of the index)
+        for p_tuple in unique(Combinatorics.permutations(idx_tuple))
+            tensor[p_tuple...] = val
+        end
+    end
+    return tensor
+end
+
+# Randomly test tensors to see if we can find one that doesn't work
+# run_check_on_random_tensors(200)
+
+
+
+
+
+# Testing the Theorem on a case that doesn't work
+
+tensorA = reshape([
+    0.5, -0.1, -0.1, -0.1,
+   -0.1, -0.1, -0.1,  1.0,
+   -0.1, -0.1, -0.1,  1.0,
+   -0.1,  1.0,  1.0,  0.5
+], (2, 2, 2, 2))
+
+tensorB = reshape([
+   -0.1, -0.3, -0.3,  0.0,
+   -0.3,  0.0,  0.0,  0.1,
+   -0.3,  0.0,  0.0,  0.1,
+    0.0,  0.1,  0.1, -0.6
+], (2, 2, 2, 2))
+
+run_check_on_tensors(tensorB, tensorA)
