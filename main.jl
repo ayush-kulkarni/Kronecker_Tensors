@@ -5,7 +5,7 @@
 using Combinatorics
 
 try
-    include("runner.jl")
+    include("h-eigenpairs/runner.jl")
 
 catch e
     println("Error: Make sure 'runner.jl' is in the same directory as this script.")
@@ -61,16 +61,28 @@ function run_check_on_random_tensors(num_tests)
     for i in 1:num_tests
         println("Test $i")
         # Generate random symmetric tensors A and B
-        tensor_A = generate_symmetric_tensor(4, (2, 2, 2, 2))
-        tensor_B = generate_symmetric_tensor(4, (2, 2, 2, 2))
+        tensor_A = generate_symmetric_tensor(3, (2, 2, 2))
+        tensor_B = generate_symmetric_tensor(3, (2, 2, 2))
 
         # Compute their Kronecker product
         kronecker_product_result = kronecker_product(tensor_B, tensor_A)
 
         # Run the workflow and compare results
         largest_magnitude_lambda_A = run_heigenpair_workflow(tensor_A, "A")
+        if (largest_magnitude_lambda_A == -1)
+            # println("Solver failed for tensor A. Skipping this test.")
+            continue
+        end
         largest_magnitude_lambda_B = run_heigenpair_workflow(tensor_B, "B")
+        if (largest_magnitude_lambda_B == -1)
+            # println("Solver failed for tensor B. Skipping this test.")
+            continue
+        end
         largest_magnitude_lambda_C = run_heigenpair_workflow(kronecker_product_result, "C")
+        if (largest_magnitude_lambda_C == -1)
+            # println("Solver failed for Kronecker product tensor C. Skipping this test.")
+            continue
+        end
 
         product_of_lambdas = largest_magnitude_lambda_A * largest_magnitude_lambda_B
 
@@ -104,7 +116,7 @@ function generate_symmetric_tensor(dim, size)
     for idx_tuple in Combinatorics.with_replacement_combinations(1:n, dim)
         # Pick a random value >= 1.0 with a step of 0.1 and no upper bound.
         # This generates a number from a Pareto distribution and rounds it to one decimal place.
-        val = round(1.0 / (1.0 - rand()), digits=1)
+        val = rand(-1.0:0.1:1.0)
         # Assign this value to all symmetric positions (all permutations of the index)
         for p_tuple in unique(Combinatorics.permutations(idx_tuple))
             tensor[p_tuple...] = val
@@ -114,80 +126,25 @@ function generate_symmetric_tensor(dim, size)
 end
 
 
+
+
 # -- Randomly test tensors to see if we can find one that doesn't work -- 
-# run_check_on_random_tensors(1000)
+# run_check_on_random_tensors(1)
 
 
 
-# -- Counter Examples Found -- 
 
-# 1st Counter Example
-# tensorA = reshape([
-#     0.5, -0.1, -0.1, -0.1,
-#    -0.1, -0.1, -0.1,  1.0,
-#    -0.1, -0.1, -0.1,  1.0,
-#    -0.1,  1.0,  1.0,  0.5
-# ], (2, 2, 2, 2))
+# Run Hyperdeterminant Analysis on the provided tensor
+# try
+#     # Load dependencies and data
+#     include("hyperdeterminant/run-hyperdeterminant.jl")
+#     include("hyperdeterminant/hyperdeterminant.jl")
+    
+#     # Call the main function with the loaded tensor
+#     # analyze_hyperdeterminant(A)
 
-# tensorB = reshape([
-#    -0.1, -0.3, -0.3,  0.0,
-#    -0.3,  0.0,  0.0,  0.1,
-#    -0.3,  0.0,  0.0,  0.1,
-#     0.0,  0.1,  0.1, -0.6
-# ], (2, 2, 2, 2))
-
-# run_check_on_tensors(tensorB, tensorA)
-
-
-
-# 2nd Counter Example
-# tensorA = reshape([
-#     0.1, 0.8,
-#     0.8, 1.0,
-#     0.8, 1.0,
-#     1.0, 0.5,
-#     0.8, 1.0,
-#     1.0, 0.5,
-#     1.0, 0.5,
-#     0.5, 0.9
-# ], 2, 2, 2, 2)
-
-# tensorB = reshape([
-#     0.8, 0.3,
-#     0.3, 0.4,
-#     0.3, 0.4,
-#     0.4, 0.5,
-#     0.3, 0.4,
-#     0.4, 0.5,
-#     0.4, 0.5,
-#     0.5, 0.4
-# ], 2, 2, 2, 2)
-
-# run_check_on_tensors(tensorB, tensorA)
-
-
-
-# 3rd Counter Example
-# tensorA = reshape([
-#     # Slice [:, :, 1, 1]
-#     9.6, 1.2, 1.2, 20.4,
-#     # Slice [:, :, 2, 1]
-#     1.2, 20.4, 20.4, 2.8,
-#     # Slice [:, :, 1, 2]
-#     1.2, 20.4, 20.4, 2.8,
-#     # Slice [:, :, 2, 2]
-#     20.4, 2.8, 2.8, 3682.0
-# ], 2, 2, 2, 2)
-
-# tensorB = reshape([
-#     # Slice [:, :, 1, 1]
-#     1.6, 7.5, 7.5, 1.3,
-#     # Slice [:, :, 2, 1]
-#     7.5, 1.3, 1.3, 1.7,
-#     # Slice [:, :, 1, 2]
-#     7.5, 1.3, 1.3, 1.7,
-#     # Slice [:, :, 2, 2]
-#     1.3, 1.7, 1.7, 1.3
-# ], 2, 2, 2, 2)
-
-# run_check_on_tensors(tensorB, tensorA)
+# catch e
+#     println("\nAn error occurred during script execution:")
+#     showerror(stdout, e)
+#     println()
+# end

@@ -11,8 +11,8 @@ end
 function run_heigenpair_workflow(A, k)
     
     # --- File Output Configuration ---
-    equations_output_filename = "h-eigenpair_eqs_$k.txt"
-    solutions_output_filename = "solutions_$k.txt"
+    equations_output_filename = "./h-eigenpair_eqs_$k.txt"
+    solutions_output_filename = "./solutions_$k.txt"
 
     # --- Main Execution Logic ---
     try
